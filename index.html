@@ -340,7 +340,7 @@
                     depth: antennaBottomRingDepth,
                     bevelEnabled: true,
                     bevelSize: 0.03, 
-                    bevelThickness: 0.1,
+                    bevelThickness: 0.05,
                     bevelSegments:30
                 }
                 //zbog bevela će rubovi di se spajjau 0 i 2pi ostat crtica/praznina jer se tu primjenuuje, zato vucemo prvi krug skoro do 2PI TAKO DA BEVEL POPUNI TAJ DIO KAD SE NAPRAVI
@@ -363,13 +363,17 @@
                 //antennaBottomRing2.rotation.z=2.66;
 
                 //TRANSLATIRAJ NA VRH UREDAJA
-                antennaBottomRing1.translateZ(height/2+0.1);//nadodjamo bevel thickness jer kad se zarotira donji krug je u ishodistu ali ispod njega ima jos bevel koji je debel toliko pa ga tribamo dignit jos gore za toliko
-                antennaBottomRing1.translateX(antennaCenterPosition);
+                antennaBottomRing1.translateZ(height/2+0.05);//nadodjamo bevel thickness jer kad se zarotira DONJI KRUG JE U ISHODISTU ISPOD NJEGA JE NADODAN BEVEL THICKNESS A IZNAD NJEGA SE NALAZI OSTATAK EXTERUDANOG OBLIKA VISINE EXTRUDEDEPTH+GORNJI BEVEL
+                antennaBottomRing1.translateX(antennaHorizontalPosition);
                 antennaBottomRing1.translateY((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth)//stavi srediste antene na srediste debljine uredaja -> DEBLJINA UREDAJA-> frontDeviceShapeDepth+deviceExtrudeDepth, nase srediste se nalazi di i pocetak extrudanong straznjeg dijela uredaja-> pomicemo srediste do sredine uredaja a to je jos sredina-debljina prednje strane uredaja
 
                 //antennaBottomRing2.translateZ(height/2+0.1);
-                //antennaBottomRing2.translateX(antennaCenterPosition);
-
+                //antennaBottomRing2.translateX(antennaHorizontalPosition);
+                let deviceScreenGeometry = new THREE.PlaneBufferGeometry(2,1);
+                const deviceScreen = new THREE.Mesh(deviceScreenGeometry,antennaBottomRingNutMaterial);
+                deviceScreen.rotation.x=-Math.PI/2;
+                deviceScreen.translateZ(antennaBottomRingDepth);
+                scene.add(deviceScreen);
                 scene.add(antennaBottomRing1);
                 //scene.add(antennaBottomRing2);
 
@@ -378,15 +382,134 @@
                 
             }
 
-            /*function generateDeviceTopAntennaHexagonNut()//napravi maticu iznad prstena na vrhu uređaja
+            function generateDeviceTopAntennaHexagonNut(scene)//napravi maticu iznad prstena na vrhu uređaja
             {
+                let antennaHexagonNutExtrudeSettings={
+                    //steps: 2,
+                    curveSegments:50,
+                    steps:30,
+                    depth: antennaHexagonNutDepth,
+                    bevelEnabled: true,
+                    bevelSize: 0.03, 
+                    bevelThickness: 0.05,
+                    bevelSegments:30
+                }
+                //hexagon-> duljina stranice a jednaka je radijusu kruznice
+                let antennaHexagonNutShape=new THREE.Shape();
+                let hexagonTriangleSideLength=antennaRadius;//stranica hexagona je jednaka radijusu
+                let hexagonTriangleHeight=0.866*antennaRadius;//to je √3/2 a
 
+                antennaHexagonNutShape.moveTo(hexagonTriangleSideLength/2,-hexagonTriangleHeight)//donja liva tocka
+                antennaHexagonNutShape.lineTo(hexagonTriangleSideLength,0);//livi srednji
+                antennaHexagonNutShape.lineTo(hexagonTriangleSideLength/2,hexagonTriangleHeight);//livio gornji
+                antennaHexagonNutShape.lineTo(-hexagonTriangleSideLength/2,hexagonTriangleHeight);//desni gornji
+                antennaHexagonNutShape.lineTo(-hexagonTriangleSideLength,0)//desni srednji
+                antennaHexagonNutShape.lineTo(-hexagonTriangleSideLength/2,-hexagonTriangleHeight);//desni donji
+                antennaHexagonNutShape.lineTo(hexagonTriangleSideLength/2,-hexagonTriangleHeight)
+
+                const antennaHexagonNutGeometry=new THREE.ExtrudeGeometry(antennaHexagonNutShape,antennaHexagonNutExtrudeSettings)
+            
+                const antennaHexagonNut=new THREE.Mesh(antennaHexagonNutGeometry,antennaBottomRingNutMaterial)
+                
+                //ROTIRAJ DA BUDU USPRAVNI
+                antennaHexagonNut.rotation.x=-Math.PI/2;
+                antennaHexagonNut.rotation.z=2.66-Math.PI;
+                //antennaBottomRing2.rotation.x=-Math.PI/2;
+                //antennaBottomRing2.rotation.z=2.66;
+
+                //TRANSLATIRAJ
+                antennaHexagonNut.translateZ(height/2+0.05+antennaBottomRingDepth+0.05+0.05);//sa height/2+0.05 dodemo na vrh uredaja i onda trebamo doc tocno iznad prstena-> potrebno dodat njegovu dvostruku debljinu(jer bevel ide u 2 smjera)
+                antennaHexagonNut.translateX(antennaHorizontalPosition);
+                antennaHexagonNut.translateY((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth)//stavi srediste antene na srediste debljine uredaja -> DEBLJINA UREDAJA-> frontDeviceShapeDepth+deviceExtrudeDepth, nase srediste se nalazi di i pocetak extrudanong straznjeg dijela uredaja-> pomicemo srediste do sredine uredaja a to je jos sredina-debljina prednje strane uredaja
+
+                //antennaBottomRing2.translateZ(height/2+0.1);
+                //antennaBottomRing2.translateX(antennaHorizontalPosition);
+                scene.add(antennaHexagonNut);
             }
 
-            function generateDeviceTopAntenna()//napravi antenu na vrhu ređaja koja se satoji od 3 dijela(NBROJANA PO REDU OD DOLI PREMA GORE) -> VALJAK, PRSTEN, POLOVICA SFERE(KAPICA NA VRHU, Sphere geomtry, kut theta namisti)
+            function generateDevicAntennaTopPart(scene)//napravi antenu na vrhu ređaja koja se satoji od 3 dijela(NBROJANA PO REDU OD DOLI PREMA GORE) -> VALJAK, PRSTEN, POLOVICA SFERE(KAPICA NA VRHU, Sphere geomtry, kut theta namisti)
             {
+                //DODAJ VALJAK
+                let antennaMiddleCilinderShape=new THREE.Shape();
 
-            } */
+                let antennaCilinderExtrudeSettings={
+                    //steps: 2,
+                    curveSegments:50,
+                    steps:30,
+                    depth: antennaCilinderHeight,
+                    bevelEnabled: false,
+/*                     bevelSize: 0.03, 
+                    bevelThickness: 0.05,
+                    bevelSegments:30 */
+                }
+
+                antennaMiddleCilinderShape.absarc(0,0,antennaRadius,0, 2*Math.PI, false)
+
+                const antennaMiddleCilinderGeometry=new THREE.ExtrudeGeometry(antennaMiddleCilinderShape,antennaCilinderExtrudeSettings);
+
+                const antennaMiddleCilinder=new THREE.Mesh(antennaMiddleCilinderGeometry,antennaTopPartMaterial)
+
+                //ROTIRAJ DA BUDU USPRAVNI
+                antennaMiddleCilinder.rotation.x=-Math.PI/2;
+                antennaMiddleCilinder.rotation.z=2.66-Math.PI;
+                //antennaBottomRing2.rotation.x=-Math.PI/2;
+                //antennaBottomRing2.rotation.z=2.66;
+
+                //TRANSLATIRAJ                                              //nema bevela NADODAJEMO 2 BEVELA OD PRSTENA, 2 BEVELA OD MATICE I NJIHOVE DUBINE ZA DOC NA VRH
+                antennaMiddleCilinder.translateZ(height/2+0.05+antennaBottomRingDepth+0.05+0.05+antennaHexagonNutDepth+0.05);//sa height/2+0.1 dodemo na vrh uredaja i onda trebamo doc tocno iznad prstena-> potrebno dodat njegovu dvostruku debljinu(jer bevel ide u 2 smjera)
+                antennaMiddleCilinder.translateX(antennaHorizontalPosition);
+                antennaMiddleCilinder.translateY((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth)//stavi srediste antene na srediste debljine uredaja -> DEBLJINA UREDAJA-> frontDeviceShapeDepth+deviceExtrudeDepth, nase srediste se nalazi di i pocetak extrudanong straznjeg dijela uredaja-> pomicemo srediste do sredine uredaja a to je jos sredina-debljina prednje strane uredaja
+
+                scene.add(antennaMiddleCilinder);
+
+                //DODAJ PRSTEN U SREDINI
+                let antennaMiddleRingShape=new THREE.Shape();
+
+                let antennaMiddleRingExtrudeSettings={
+                    //steps: 2,
+                    curveSegments:50,
+                    steps:30,
+                    depth: antennaBottomRingDepth*0.75,//25% manja dubina od onog na dnu
+                    bevelEnabled: true,
+                    bevelSize: 0.03, 
+                    bevelThickness: 0.05,
+                    bevelSegments:30
+                }
+
+                antennaMiddleRingShape.absarc(0,0,antennaRadius,0, 1.99*Math.PI, false)
+
+                const antennaMiddleRingGeometry=new THREE.ExtrudeGeometry(antennaMiddleRingShape,antennaMiddleRingExtrudeSettings)
+
+                const antennaMiddleRing=new THREE.Mesh(antennaMiddleRingGeometry,antennaBottomRingNutMaterial);
+
+                //ROTIRAJ DA BUDU USPRAVNI
+                antennaMiddleRing.rotation.x=-Math.PI/2;
+                antennaMiddleRing.rotation.z=2.66-Math.PI;
+                //antennaBottomRing2.rotation.x=-Math.PI/2;
+                //antennaBottomRing2.rotation.z=2.66;
+
+                //TRANSLATIRAJ                                              
+                antennaMiddleRing.translateZ(height/2+0.05+antennaBottomRingDepth+0.05+0.05+antennaHexagonNutDepth+0.05+antennaCilinderHeight+0.05);//kada srediste dode di i gornji dio valjka triba ga jos dignit za antennaBottomRingDept/2 + bevel thickness(0.02)
+                antennaMiddleRing.translateX(antennaHorizontalPosition);
+                antennaMiddleRing.translateY((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth)//stavi srediste antene na srediste debljine uredaja -> DEBLJINA UREDAJA-> frontDeviceShapeDepth+deviceExtrudeDepth, nase srediste se nalazi di i pocetak extrudanong straznjeg dijela uredaja-> pomicemo srediste do sredine uredaja a to je jos sredina-debljina prednje strane uredaja
+
+                scene.add(antennaMiddleRing);
+
+                //dodaj kuglinu kapicu na vrh odnosno pola sfere
+
+                const antennaTopHalfSphereGeometry = new THREE.SphereGeometry( antennaRadius, 50, 30, 0, 2*Math.PI,Math.PI/2,Math.PI );
+                const antennaTopHalfSphere = new THREE.Mesh( antennaTopHalfSphereGeometry, antennaTopPartMaterial );
+                //rotiraj
+                antennaTopHalfSphere.rotation.x=-Math.PI;//osi iste kao kod normalnog x samo drugi predznaci -> x i y osi di su prije isli s + sad su -, x ostaje nepromjenjen, rotirali se oko x za 180
+                
+                //translatiraj
+                antennaTopHalfSphere.translateY(-(height/2+0.05+antennaBottomRingDepth+0.05+0.05+antennaHexagonNutDepth+0.05+antennaCilinderHeight+0.05+antennaBottomRingDepth*0.75+0.05));//kada srediste dode di i gornji dio valjka triba ga jos dignit za antennaBottomRingDept/2 + bevel thickness(0.02)
+                antennaTopHalfSphere.translateZ(((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth))
+                antennaTopHalfSphere.translateX(antennaHorizontalPosition);
+
+                scene.add( antennaTopHalfSphere );
+
+            }
 
             function updateButtonMesh()
             {
@@ -556,24 +679,34 @@
 
             generateDeviceScreen(scene);
 
-
+            //U DEPTH NIJE UKLJUCENA DEBLJINA BEVELA NA STRANAM EXTRUDANJA -> UKUPNA VISINA JE 2*BEVEL THICKNESS + DEPTH
             //generiraj antenu na vrhu po dijelovima
             //parametri za djelove antene
             let antennaRadius=0.2;
-            let antennaCenterPosition=-1;//pozicija sredisnjeg dijela antene na vrhu uredaja
+            let antennaHorizontalPosition=-1;//pozicija sredisnjeg dijela antene na vrhu uredaja gledamo horizontalno u odnosu na sirinu uredaja
             let antennaBottomRingDepth=0.1;//prsten na dnu
-            let antennaHexagonNutDepth=1;//sesterokutasta matica
-            let antennaCilinderHeight=3;//visina valjka ispod kugline kapice
+            let antennaHexagonNutDepth=0.2;//sesterokutasta matica
+            let antennaCilinderHeight=2;//visina valjka ispod kugline kapice
+            
             let antennaBottomRingNutMaterial=new THREE.MeshPhongMaterial({
-                    color:0xffc107
+                color:0xffc107
             })
+
+            let antennaTopPartMaterial=new THREE.MeshPhongMaterial({
+                color:0x2F4F4F
+            })
+
             generateDeviceTopAntennaRing(scene);
 
+            generateDeviceTopAntennaHexagonNut(scene);
+
+            generateDevicAntennaTopPart(scene);
 
             const frontLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
             frontLight.position.set(0,1,1);
             scene.add(frontLight);
             camera.position.z = 5;
+            camera.position.y=5;
 
             const backLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
             backLight.position.set(0,-1,-1);
