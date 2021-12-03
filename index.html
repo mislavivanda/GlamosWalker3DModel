@@ -291,6 +291,35 @@
 
             function generateDeviceScreen(scene)
             {
+                //atributi koje daje three.js u shadere po defualtu https://threejs.org/docs/index.html?q=web#api/en/renderers/webgl/WebGLProgram
+                /*Note that you can therefore calculate the position of a vertex in the vertex shader by:
+gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
+                //varyingi se korsite za dijeljenje izmedu veertex i fragment shadera, npr koristimo u fragment shader uv kooridnate za svaki pixel
+                const deviceScreenVertexShader=`
+
+                    varying vec2 vertexUV;
+
+                    void main(){
+
+                        vertexUV=uv;//imamo pristup uv vekotur po defualtu od three.js
+
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+                    }
+                `
+
+                //slika je velicine 1787*435 pixela, zelimo zadrzat njen aspect ratio
+                const deviceScreenFragmentShader=`
+
+                varying vec2 vertexUV;
+
+                uniform sampler2D deviceScreenTexture;
+
+                    void main(){
+                        //texture2d na temelju u v koordinata od texture vraća boju za taj pixel
+                        gl_FragColor = vec4(texture2D(deviceScreenTexture, vertexUV).rgb, 1.0);
+                    }
+                `
+
                 let deviceScreenShape=new THREE.Shape();
                 deviceScreenShape.moveTo(-1,1);
                 deviceScreenShape.lineTo(-1,2);
@@ -298,7 +327,10 @@
                 deviceScreenShape.lineTo(1,1);
                 deviceScreenShape.lineTo(-1,1);
 
-                let deviceScreenGeometry = new THREE.PlaneBufferGeometry(2,1);
+
+                let deviceBaseScreenGeometry = new THREE.PlaneBufferGeometry(2,1);//baza koja uvik daje bilu pizadinu d onog sta ne zauzme glamos logo slika
+
+                let deviceScreenGeometry = new THREE.PlaneBufferGeometry(2,2*(435/1787));
 
                 let deviceScreenMaterial;
                 const textureLoader = new THREE.TextureLoader();
@@ -307,18 +339,32 @@
                     'textures/logo.png',
 
                     // onLoad callback
-                    function ( texture ) {
+                    function ( screenTexture ) {
                         console.log('Usao u callback');
                         // in this example we create the material when the texture is loaded
-                        deviceScreenMaterial= new THREE.MeshBasicMaterial( {
-                            map: texture,
-                            side:THREE.DoubleSide
+                        deviceScreenMaterial= new THREE.ShaderMaterial( {
+                            vertexShader:deviceScreenVertexShader,
+                            fragmentShader:deviceScreenFragmentShader,
+                            uniforms:{//oreko uniformsa prenosimo varijable u shadere, definiramo ih tu
+                                deviceScreenTexture:{
+                                    value:screenTexture
+                                }
+                            }
                         } );
                         const deviceScreen = new THREE.Mesh(deviceScreenGeometry,deviceScreenMaterial);
                         deviceScreen.rotation.y=2.66-Math.PI;
-                        deviceScreen.translateZ(0.001)
+                        deviceScreen.translateZ(0.01)
                         deviceScreen.translateY(1.5);
                         scene.add(deviceScreen);
+
+                        const deviceBaseScreenMaterial=new THREE.MeshBasicMaterial({
+                            color:0xffffff
+                        });
+                        const deviceBaseScreen= new THREE.Mesh(deviceBaseScreenGeometry,deviceBaseScreenMaterial);
+                        deviceBaseScreen.rotation.y=2.66-Math.PI;
+                        deviceBaseScreen.translateZ(0.005);
+                        deviceBaseScreen.translateY(1.5);
+                        scene.add(deviceBaseScreen);
                     },
 
                     // onProgress callback currently not supported
@@ -437,10 +483,10 @@
                     curveSegments:50,
                     steps:30,
                     depth: antennaCilinderHeight,
-                    bevelEnabled: false,
-/*                     bevelSize: 0.03, 
+                    bevelEnabled: true,
+                    bevelSize: 0.01, 
                     bevelThickness: 0.05,
-                    bevelSegments:30 */
+                    bevelSegments:30
                 }
 
                 antennaMiddleCilinderShape.absarc(0,0,antennaRadius,0, 2*Math.PI, false)
@@ -456,7 +502,7 @@
                 //antennaBottomRing2.rotation.z=2.66;
 
                 //TRANSLATIRAJ                                              //nema bevela NADODAJEMO 2 BEVELA OD PRSTENA, 2 BEVELA OD MATICE I NJIHOVE DUBINE ZA DOC NA VRH
-                antennaMiddleCilinder.translateZ(height/2+0.05+antennaBottomRingDepth+0.05+0.05+antennaHexagonNutDepth+0.05);//sa height/2+0.1 dodemo na vrh uredaja i onda trebamo doc tocno iznad prstena-> potrebno dodat njegovu dvostruku debljinu(jer bevel ide u 2 smjera)
+                antennaMiddleCilinder.translateZ(height/2+0.05+antennaBottomRingDepth+0.05+0.05+antennaHexagonNutDepth+0.05+0.05);//sa height/2+0.1 dodemo na vrh uredaja i onda trebamo doc tocno iznad prstena-> potrebno dodat njegovu dvostruku debljinu(jer bevel ide u 2 smjera)
                 antennaMiddleCilinder.translateX(antennaHorizontalPosition);
                 antennaMiddleCilinder.translateY((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth)//stavi srediste antene na srediste debljine uredaja -> DEBLJINA UREDAJA-> frontDeviceShapeDepth+deviceExtrudeDepth, nase srediste se nalazi di i pocetak extrudanong straznjeg dijela uredaja-> pomicemo srediste do sredine uredaja a to je jos sredina-debljina prednje strane uredaja
 
@@ -471,7 +517,7 @@
                     steps:30,
                     depth: antennaBottomRingDepth*0.75,//25% manja dubina od onog na dnu
                     bevelEnabled: true,
-                    bevelSize: 0.03, 
+                    bevelSize: 0.01, 
                     bevelThickness: 0.05,
                     bevelSegments:30
                 }
@@ -489,21 +535,21 @@
                 //antennaBottomRing2.rotation.z=2.66;
 
                 //TRANSLATIRAJ                                              
-                antennaMiddleRing.translateZ(height/2+0.05+antennaBottomRingDepth+0.05+0.05+antennaHexagonNutDepth+0.05+antennaCilinderHeight+0.05);//kada srediste dode di i gornji dio valjka triba ga jos dignit za antennaBottomRingDept/2 + bevel thickness(0.02)
+                antennaMiddleRing.translateZ(height/2+0.05+antennaBottomRingDepth+0.05+0.05+antennaHexagonNutDepth+0.05+antennaCilinderHeight+0.05+0.05+0.05);//kada srediste dode di i gornji dio valjka triba ga jos dignit za antennaBottomRingDept/2 + bevel thickness(0.02)
                 antennaMiddleRing.translateX(antennaHorizontalPosition);
                 antennaMiddleRing.translateY((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth)//stavi srediste antene na srediste debljine uredaja -> DEBLJINA UREDAJA-> frontDeviceShapeDepth+deviceExtrudeDepth, nase srediste se nalazi di i pocetak extrudanong straznjeg dijela uredaja-> pomicemo srediste do sredine uredaja a to je jos sredina-debljina prednje strane uredaja
 
                 scene.add(antennaMiddleRing);
 
                 //dodaj kuglinu kapicu na vrh odnosno pola sfere
-
-                const antennaTopHalfSphereGeometry = new THREE.SphereGeometry( antennaRadius, 50, 30, 0, 2*Math.PI,Math.PI/2,Math.PI );
+                                                                            //uracunaj i srinu bevela u radijus da bude kao i srina valjka i prstena
+                const antennaTopHalfSphereGeometry = new THREE.SphereGeometry( antennaRadius+0.01/2, 50, 30, 0, 2*Math.PI,Math.PI/2,Math.PI );
                 const antennaTopHalfSphere = new THREE.Mesh( antennaTopHalfSphereGeometry, antennaTopPartMaterial );
                 //rotiraj
                 antennaTopHalfSphere.rotation.x=-Math.PI;//osi iste kao kod normalnog x samo drugi predznaci -> x i y osi di su prije isli s + sad su -, x ostaje nepromjenjen, rotirali se oko x za 180
-                
+                antennaTopHalfSphere.rotation.y=-(2.66-Math.PI);
                 //translatiraj
-                antennaTopHalfSphere.translateY(-(height/2+0.05+antennaBottomRingDepth+0.05+0.05+antennaHexagonNutDepth+0.05+antennaCilinderHeight+0.05+antennaBottomRingDepth*0.75+0.05));//kada srediste dode di i gornji dio valjka triba ga jos dignit za antennaBottomRingDept/2 + bevel thickness(0.02)
+                antennaTopHalfSphere.translateY(-(height/2+0.05+antennaBottomRingDepth+0.05+0.05+antennaHexagonNutDepth+0.05+antennaCilinderHeight+0.05+0.05+0.05+antennaBottomRingDepth*0.75+0.05));//kada srediste dode di i gornji dio valjka triba ga jos dignit za antennaBottomRingDept/2 + bevel thickness(0.02)
                 antennaTopHalfSphere.translateZ(((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth))
                 antennaTopHalfSphere.translateX(antennaHorizontalPosition);
 
@@ -575,7 +621,9 @@
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight,0.01, 1000 );
 
-            const renderer = new THREE.WebGLRenderer();
+            const renderer = new THREE.WebGLRenderer({
+                antialias:true//makni probleme kod rubova di nisu glatke linije
+            });
             renderer.setPixelRatio( window.devicePixelRatio );
             renderer.setSize( window.innerWidth, window.innerHeight );
             document.body.appendChild( renderer.domElement );
