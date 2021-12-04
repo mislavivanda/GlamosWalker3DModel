@@ -175,7 +175,7 @@
                 buttonShape.lineTo( bottomLeftX+width-buttonFrameRadius, bottomLeftY+buttonFrameRadius );
                 buttonShape.lineTo( bottomLeftX+buttonFrameRadius, bottomLeftY+buttonFrameRadius );
                 const buttonGeometry = new THREE.ExtrudeGeometry( buttonShape, buttonExtrudeSettings );
-                const buttonMaterial = new THREE.MeshPhongMaterial( { color: 0xffff00 , side:THREE.FrontSide } );
+                const buttonMaterial = new THREE.MeshPhongMaterial( { color: 0x2F4F4F , side:THREE.FrontSide } );
                 const button = new THREE.Mesh( buttonGeometry, buttonMaterial ) ;
                 button.rotation.y = 2.66 - Math.PI;
                 button.translateZ(frontDeviceShapeDepth+0.001)
@@ -188,7 +188,7 @@
                 //ORDINATA Y -> donji y + gornji y - donji y) / 2
                 //RADIJUS -> (DESNIX - LIVI X)/2, ISTO KAO SREDISTE, MOZE I S VISINOM NA ISTI NACIN JER JE KVADRAT
                 buttonCircleShape.absarc(bottomLeftX+buttonFrameRadius+(bottomLeftX+width-buttonFrameRadius - (bottomLeftX+buttonFrameRadius))/2, bottomLeftY+buttonFrameRadius+(bottomLeftY+height-buttonFrameRadius - (bottomLeftY+buttonFrameRadius))/2, (bottomLeftX+width-buttonFrameRadius - (bottomLeftX+buttonFrameRadius))/2, 0, 2 * Math.PI, false );
-                let buttonCircleMaterial = new THREE.MeshPhongMaterial( { color: 0xffff00 } );
+                let buttonCircleMaterial = new THREE.MeshPhongMaterial( { color: 0x2F4F4F } );
                 let buttonCircleGeometryl= new THREE.ExtrudeGeometry(buttonCircleShape, circleExtrudeSettings);
                 const buttonCircle = new THREE.Mesh( buttonCircleGeometryl, buttonCircleMaterial );
                 buttonCircle.rotation.y=2.66-Math.PI;
@@ -230,7 +230,7 @@
 
 
                 let buttonFrameGeometry= new THREE.ExtrudeGeometry(buttonFrame,buttonFrameExtrudeSettings);
-                let buttonFrameMaterial= new THREE.MeshPhongMaterial( { color: 0xffff00 , side:THREE.FrontSide } );
+                let buttonFrameMaterial= new THREE.MeshPhongMaterial( { color: 0x2F4F4F , side:THREE.FrontSide } );
                 let buttonFrameMesh=new THREE.Mesh(buttonFrameGeometry,buttonFrameMaterial);
                 buttonFrameMesh.rotation.y=2.66-Math.PI;
                 //buttonFrameMesh.rotation.z=-Math.PI/2//jer se rotira za 90 kad se koristi extrusion path, potrebno odrodirat
@@ -340,17 +340,27 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
 
                     // onLoad callback
                     function ( screenTexture ) {
-                        console.log('Usao u callback');
                         // in this example we create the material when the texture is loaded
-                        deviceScreenMaterial= new THREE.ShaderMaterial( {
+                        let phongShader=THREE.ShaderLib.phong;
+                        let customUniforms={
+                            deviceScreenTexture:{
+                                    value:screenTexture
+                            }
+                        }
+                        //const shaderUniforms=THREE.UniformUtils.merge([phongShader.uniforms,customUniforms])
+                        
+/*                         deviceScreenMaterial= new THREE.ShaderMaterial( {
                             vertexShader:deviceScreenVertexShader,
                             fragmentShader:deviceScreenFragmentShader,
-                            uniforms:{//oreko uniformsa prenosimo varijable u shadere, definiramo ih tu
-                                deviceScreenTexture:{
-                                    value:screenTexture
-                                }
-                            }
-                        } );
+                            uniforms:shaderUniforms,
+                            lights:true
+                        } ); */
+/*                         const deviceScreenMaterial= new THREE.MeshPhongMaterial( {
+                            map:screenTexture
+                        } ); */
+                        const deviceScreenMaterial=new THREE.MeshBasicMaterial({//ekran uvik svitli neovisno o izvoru svjetla, ne stavljamko phong mateirjal
+                            map:screenTexture
+                        })
                         const deviceScreen = new THREE.Mesh(deviceScreenGeometry,deviceScreenMaterial);
                         deviceScreen.rotation.y=2.66-Math.PI;
                         deviceScreen.translateZ(0.01)
@@ -415,11 +425,11 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
 
                 //antennaBottomRing2.translateZ(height/2+0.1);
                 //antennaBottomRing2.translateX(antennaHorizontalPosition);
-                let deviceScreenGeometry = new THREE.PlaneBufferGeometry(2,1);
+/*                 let deviceScreenGeometry = new THREE.PlaneBufferGeometry(2,1);
                 const deviceScreen = new THREE.Mesh(deviceScreenGeometry,antennaBottomRingNutMaterial);
                 deviceScreen.rotation.x=-Math.PI/2;
                 deviceScreen.translateZ(antennaBottomRingDepth);
-                scene.add(deviceScreen);
+                scene.add(deviceScreen); */
                 scene.add(antennaBottomRing1);
                 //scene.add(antennaBottomRing2);
 
@@ -489,7 +499,7 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                     bevelSegments:30
                 }
 
-                antennaMiddleCilinderShape.absarc(0,0,antennaRadius,0, 2*Math.PI, false)
+                antennaMiddleCilinderShape.absarc(0,0,antennaRadius,0, 1.995*Math.PI, false)
 
                 const antennaMiddleCilinderGeometry=new THREE.ExtrudeGeometry(antennaMiddleCilinderShape,antennaCilinderExtrudeSettings);
 
@@ -522,11 +532,11 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                     bevelSegments:30
                 }
 
-                antennaMiddleRingShape.absarc(0,0,antennaRadius,0, 1.99*Math.PI, false)
+                antennaMiddleRingShape.absarc(0,0,antennaRadius,0, 2*Math.PI, false)
 
                 const antennaMiddleRingGeometry=new THREE.ExtrudeGeometry(antennaMiddleRingShape,antennaMiddleRingExtrudeSettings)
 
-                const antennaMiddleRing=new THREE.Mesh(antennaMiddleRingGeometry,antennaBottomRingNutMaterial);
+                const antennaMiddleRing=new THREE.Mesh(antennaMiddleRingGeometry,antennaTopPartMaterial);
 
                 //ROTIRAJ DA BUDU USPRAVNI
                 antennaMiddleRing.rotation.x=-Math.PI/2;
@@ -622,8 +632,10 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
             const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight,0.01, 1000 );
 
             const renderer = new THREE.WebGLRenderer({
+                alpha:true,
                 antialias:true//makni probleme kod rubova di nisu glatke linije
             });
+            renderer.setClearColor( 0xf0f0f0 );//boja pozadine
             renderer.setPixelRatio( window.devicePixelRatio );
             renderer.setSize( window.innerWidth, window.innerHeight );
             document.body.appendChild( renderer.domElement );
@@ -735,13 +747,16 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
             let antennaBottomRingDepth=0.1;//prsten na dnu
             let antennaHexagonNutDepth=0.2;//sesterokutasta matica
             let antennaCilinderHeight=2;//visina valjka ispod kugline kapice
-            
-            let antennaBottomRingNutMaterial=new THREE.MeshPhongMaterial({
-                color:0xffc107
+
+            let antennaBottomRingNutMaterial=new THREE.MeshStandardMaterial({
+                color:0xffc107,
+                roughness:0.5,
+                metalness:1,
+                reflectivity:1,
             })
 
             let antennaTopPartMaterial=new THREE.MeshPhongMaterial({
-                color:0x2F4F4F
+                color:0x000000
             })
 
             generateDeviceTopAntennaRing(scene);
@@ -750,19 +765,27 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
 
             generateDevicAntennaTopPart(scene);
 
+
             const frontLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
             frontLight.position.set(0,1,1);
             scene.add(frontLight);
-            camera.position.z = 5;
-            camera.position.y=5;
 
             const backLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
             backLight.position.set(0,-1,-1);
             scene.add(backLight);
-            console.log(orbitControls.target);
+
+            const leftLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
+            leftLight.position.set(-3,1,0);
+            scene.add(leftLight);
+
+            const rightLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
+            rightLight.position.set(3,1,0);
+            scene.add(rightLight);
+
+            camera.position.z = 5;
+            camera.position.y=5;
 
             function onWindowResize() {//responsive desgin na resize prozora, prati promjenu velicine prozora tako da mozemo testirat na manjin ekranima, inace se nec minja ovi aspekt i nas uredaj stoji fiksno ko na velikon ekranu pa ce smannivanjen ekrana skroz nestat iz vidiljvig podrucja, samo crnilo
-
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
 
