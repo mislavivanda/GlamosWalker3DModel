@@ -475,7 +475,7 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
 
                 let deviceBaseScreenGeometry = new THREE.PlaneBufferGeometry(width*0.416,width*0.416);//baza koja uvik daje bilu pizadinu d onog sta ne zauzme glamos logo slika
 
-                let deviceScreenGeometry = new THREE.PlaneBufferGeometry(width*0.416,width*0.416*(435/1787));
+                let deviceScreenGeometry = new THREE.PlaneBufferGeometry(width*0.416,width*0.416*(1403/1500));
 
                 let deviceScreenMaterial;
 
@@ -487,7 +487,8 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                     // onLoad callback
                     function ( screenTexture ) {
                         const deviceScreenMaterial=new THREE.MeshBasicMaterial({//ekran uvik svitli neovisno o izvoru svjetla, ne stavljamko phong mateirjal
-                            map:screenTexture
+                            map:screenTexture,
+                            color:0xffffff
                         })
                         const deviceScreen = new THREE.Mesh(deviceScreenGeometry,deviceScreenMaterial);
                         deviceScreen.rotation.y=2.66-Math.PI;
@@ -737,11 +738,12 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
 
             function generateGlamosLabels(scene)
             {
-                //generiraj prednji label
                 const textureLoader = new THREE.TextureLoader();
+
+                //generiraj PREDNJI DONJI LABEL
                 textureLoader.load(
                     // resource URL
-                    'textures/logo.png',
+                    'textures/logo-transparent.png',
 
                     // onLoad callback
                     function ( logoTexture ) {
@@ -750,7 +752,7 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                             transparent: true,
                             map:logoTexture
                         })
-                        const frontBottomLogoGeometry = new THREE.PlaneBufferGeometry(1,435/1787);
+                        const frontBottomLogoGeometry = new THREE.PlaneBufferGeometry(0.3833*width,0.3833*width*435/1787);
                         const frontBottomLogo = new THREE.Mesh(frontBottomLogoGeometry,frontBottomLogoMaterial);
                         frontBottomLogo.rotation.y=2.66-Math.PI;
                         frontBottomLogo.translateZ(frontDeviceShapeDepth+0.01)
@@ -766,6 +768,38 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                         console.error( 'An error happened.' );
                     }
                 );
+
+                //generiraj PREDNJI DONJI LABEL
+                textureLoader.load(
+                // resource URL
+                'textures/logo.png',
+
+                // onLoad callback
+                function ( logoTexture ) {
+
+                    const deviceBackLogoMaterial=new THREE.MeshPhongMaterial({//ekran uvik svitli neovisno o izvoru svjetla, ne stavljamko phong mateirjal
+                        transparent: true,
+                        side:THREE.DoubleSide,
+                        map:logoTexture
+                    })
+                    const deviceBackLogoGeometry = new THREE.PlaneBufferGeometry(0.5*width,0.5*width*(1403/1500));
+                    const deviceBackLogo = new THREE.Mesh(deviceBackLogoGeometry,deviceBackLogoMaterial);
+                    deviceBackLogo.rotation.y=2.66-Math.PI-Math.PI;
+                    deviceBackLogo.translateZ(deviceExtrudeDepth+0.01)
+                    deviceBackLogo.translateY(0.2047*height);
+                    scene.add(deviceBackLogo);
+                },
+
+                // onProgress callback currently not supported
+                undefined,
+
+                // onError callback
+                function ( err ) {
+                    console.error( 'An error happened.' );
+                }
+            );
+
+
             }
 
             function updateButtonMesh()
@@ -834,6 +868,7 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
             const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight,0.01, 1000 );
 
             const renderer = new THREE.WebGLRenderer({
+                alpha:true,//da pozadina slike ekrana koja je transparent ne bude postavljena na transparent od browsera odnosno sivkasta
                 antialias:true//makni probleme kod rubova di nisu glatke linije
             });
             renderer.setClearColor( 0x000000 );//boja pozadine
