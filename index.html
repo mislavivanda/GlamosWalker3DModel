@@ -47,9 +47,46 @@
                     extrusionBevelSize: 0.1,
                     extrusionBevelOffset: 0,
                     extrusionBevelSegments: 1
+                },
+                camera:{
+                    x:0,
+                    y:2,
+                    z:5
                 }
             }
-
+            let deviceFolder=gui.addFolder('device');//ovako se dodaju folderi -> grupiraj parametre po znacenjima raddvoji svitla i objekt 
+            deviceFolder.add(world.device, 'width', 1, 20).onChange(updateDeviceMesh)
+            deviceFolder.add(world.device, 'height', 1, 20).onChange(updateDeviceMesh)
+            deviceFolder.add(world.device, 'radius', 0.1, 5).onChange(updateDeviceMesh)
+            deviceFolder.add(world.device, 'rotateX', 0, 2*Math.PI).onChange(updateDeviceMesh)
+            deviceFolder.add(world.device, 'rotateY', 0, 2*Math.PI).onChange(updateDeviceMesh)
+            deviceFolder.add(world.device, 'rotateZ', 0, 2*Math.PI).onChange(updateDeviceMesh)
+            deviceFolder.add(world.device, 'extrusionSteps', 0, 10,1).onChange(updateDeviceMesh)
+            deviceFolder.add(world.device, 'extrusionDepth', 0, 10,0.1).onChange(updateDeviceMesh)
+            let deviceBottomFolder=gui.addFolder('deviceBottom');
+            deviceBottomFolder.add(world.deviceBottom, 'rotateX',0, 2*Math.PI).onChange(updateDeviceBottomMesh);
+            deviceBottomFolder.add(world.deviceBottom, 'rotateY',0, 2*Math.PI).onChange(updateDeviceBottomMesh);
+            deviceBottomFolder.add(world.deviceBottom, 'rotateZ',0, 2*Math.PI).onChange(updateDeviceBottomMesh);
+            let frontLightFolder=gui.addFolder('frontLight');
+            frontLightFolder.add(world.frontLight,'x',-5,5).onChange(()=>frontLight.position.set(world.frontLight.x,world.frontLight.y,world.frontLight.z));
+            frontLightFolder.add(world.frontLight,'y',-5,5).onChange(()=>frontLight.position.set(world.frontLight.x,world.frontLight.y,world.frontLight.z));
+            frontLightFolder.add(world.frontLight,'z',-5,5).onChange(()=>frontLight.position.set(world.frontLight.x,world.frontLight.y,world.frontLight.z));;
+            let backLightFolder=gui.addFolder('backLight');
+            backLightFolder.add(world.backLight,'x',-5,5).onChange(()=>backLight.position.set(world.backLight.x,world.backLight.y,world.backLight.z));
+            backLightFolder.add(world.backLight,'y',-5,5).onChange(()=>backLight.position.set(world.backLight.x,world.backLight.y,world.backLight.z));;
+            backLightFolder.add(world.backLight,'z',-5,5).onChange(()=>backLight.position.set(world.backLight.x,world.backLight.y,world.backLight.z));;
+            let buttonFolder=gui.addFolder('button');
+            buttonFolder.add(world.button,'extrusionSteps',0,10,1).onChange(updateButtonMesh);
+            buttonFolder.add(world.button,'extrusionDepth',0,1,0.01).onChange(updateButtonMesh);
+            buttonFolder.add(world.button,'extrusionBevelThickness',0,2,0.05).onChange(updateButtonMesh);
+            buttonFolder.add(world.button,'extrusionBevelSize',0,2,0.05).onChange(updateButtonMesh);
+            buttonFolder.add(world.button,'extrusionBevelOffset',0,5,0.1).onChange(updateButtonMesh);
+            buttonFolder.add(world.button,'extrusionBevelSegments',1,5,1).onChange(updateButtonMesh);
+            let cameraFolder=gui.addFolder('camera');
+            cameraFolder.add(world.camera,'x',-10,10,0.1).onChange(()=>camera.position.set(world.camera.x,world.camera.y,world.camera.z))
+            cameraFolder.add(world.camera,'y',-10,10,0.1).onChange(()=>{camera.position.set(world.camera.x,world.camera.y,world.camera.z);orbitControls.update()})
+            cameraFolder.add(world.camera,'z',-10,10,0.1).onChange(()=>{camera.position.set(world.camera.x,world.camera.y,world.camera.z);orbitControls.update()})
+            
             function updateDeviceMesh()//poziv kod svake promjene nekog od dat.gui parametara
             {
                 device.geometry.dispose();//makni je, ukloni kkao bi mogli rekreirat objekt nakon promjene u slideru
@@ -82,6 +119,17 @@
                 deviceMiddleBottomPart.rotation.z=world.deviceBottom.rotateZ;
             }
 
+            function updateButtonMesh()
+            {
+                buttonExtrudeSettings.steps=world.button.extrusionSteps;
+                buttonExtrudeSettings.depth=world.button.extrusionDepth;
+                buttonExtrudeSettings.bevelThickness=world.button.extrusionBevelThickness;
+                buttonExtrudeSettings.bevelSize=world.button.extrusionBevelSize;
+                buttonExtrudeSettings.bevelOffset=world.button.extrusionBevelOffset;
+                buttonExtrudeSettings.bevelSegments=world.button.extrusionBevelSegments;
+                button.geometry = new THREE.ExtrudeGeometry( buttonShape, buttonExtrudeSettings );
+            }
+
             function generateDeviceLeftShape()
             {
                 const deviceLeftShape=new THREE.Shape();
@@ -95,7 +143,7 @@
 
                 const deviceLeftGeometry = new THREE.ExtrudeGeometry( deviceLeftShape, deviceLeftRightMiddleTopExtrudeSettings );
                 deviceLeftPart = new THREE.Mesh( deviceLeftGeometry, deviceMaterial );
-                deviceLeftPart.rotation.y = 2.66-Math.PI;
+                deviceLeftPart.rotation.y = deviceInitialYRotation;
                 deviceLeftPart.rotation.z=-Math.PI/2;//ROTIRA GA ZA 90 OKO Z -> https://stackoverflow.com/questions/25626171/threejs-extrudegeometry-depth-gives-different-result-than-extrudepath
                 scene.add( deviceLeftPart );
             }
@@ -112,7 +160,7 @@
                 
                 const deviceRightGeometry= new THREE.ExtrudeGeometry( deviceRightShape, deviceLeftRightMiddleTopExtrudeSettings);
                 deviceRightPart= new THREE.Mesh(deviceRightGeometry, deviceMaterial);
-                deviceRightPart.rotation.y=2.66-Math.PI;
+                deviceRightPart.rotation.y=deviceInitialYRotation;
                 deviceRightPart.rotation.z=-Math.PI/2;
                 scene.add(deviceRightPart);
             }
@@ -130,7 +178,7 @@
 
                 const deviceMiddleTopGeometry = new THREE.ExtrudeGeometry( deviceMiddleTopShape, deviceLeftRightMiddleTopExtrudeSettings);
                 deviceMiddleTopPart= new THREE.Mesh(deviceMiddleTopGeometry, deviceMaterial);
-                deviceMiddleTopPart.rotation.y=2.66-Math.PI;
+                deviceMiddleTopPart.rotation.y=deviceInitialYRotation;
                 deviceMiddleTopPart.rotation.z=-Math.PI/2;
                 scene.add(deviceMiddleTopPart);
             }
@@ -191,7 +239,7 @@
                 const deviceMiddleBottomGeometry= new THREE.ExtrudeGeometry( deviceMiddleBottomShape, deviceMiddleBottomExtrudeSettings);
                 deviceMiddleBottomPart= new THREE.Mesh(deviceMiddleBottomGeometry, deviceMaterial);
                 deviceMiddleBottomPart.rotation.x=-Math.PI/2;
-                deviceMiddleBottomPart.rotation.z=2.66;
+                deviceMiddleBottomPart.rotation.z=deviceInitialYRotation+Math.PI;
                 deviceMiddleBottomPart.translateY(deviceHeight/2-deviceMiddleBottomPartDepth)//rotacija se odnosi realtivno u odnosu na gornji vrh shape di smo krenili crtat -> on se nalazi na ovoj udljenosti od sredista
                 deviceMiddleBottomPart.translateZ(-deviceHeight/2)//udaljenost shapea kojeg smo nacrtali i iz kojeg smo extrudali oblik od sredista -> taj shape će nakon rotacije bit zapravo donja strana a njegova udaljenost od sredista po rotiranoj z osi je jednaka polovici visine uredaja
                 scene.add(deviceMiddleBottomPart);
@@ -205,7 +253,7 @@
                 //GORNJI
                 topSwitchDivider=new THREE.Mesh(switchDividerGeometry,switchDividersMaterial);
                 topSwitchDivider.rotation.x=-Math.PI/2;
-                topSwitchDivider.rotation.z=2.66-Math.PI;
+                topSwitchDivider.rotation.z=deviceInitialYRotation;
                 topSwitchDivider.translateZ(-deviceHeight/2+Math.cos(Math.PI/2-switchDividerBevelAngle)*(switchDividerDepth/2));
                 topSwitchDivider.translateX(cPortWidthA/2+distanceBetweenPortAndSwitch+switchHoleWidth/2)
                 topSwitchDivider.translateY(0.55-switchHoleHeight/2+Math.sin(Math.PI/2-switchDividerBevelAngle)*(switchDividerDepth/2))//0.55 je polovica ukupne dubine uredaja sa front i back side
@@ -216,7 +264,7 @@
                 //DESNI
                 rightSwitchDivider=new THREE.Mesh(switchDividerGeometry,switchDividersMaterial);
                 rightSwitchDivider.rotation.x=-Math.PI/2;
-                rightSwitchDivider.rotation.z=2.66-Math.PI;
+                rightSwitchDivider.rotation.z=deviceInitialYRotation;
                 rightSwitchDivider.translateZ(-deviceHeight/2);
                 rightSwitchDivider.translateX(cPortWidthA/2+distanceBetweenPortAndSwitch+switchHoleWidth/2)
                 rightSwitchDivider.translateY(0.55-switchHoleHeight/2)//0.55 je polovica ukupne dubine uredaja sa front i back side
@@ -232,7 +280,7 @@
                 //LIJEVI
                 leftSwitchDivider=new THREE.Mesh(switchDividerGeometry,switchDividersMaterial);
                 leftSwitchDivider.rotation.x=-Math.PI/2;
-                leftSwitchDivider.rotation.z=2.66-Math.PI;
+                leftSwitchDivider.rotation.z=deviceInitialYRotation;
                 leftSwitchDivider.translateZ(-deviceHeight/2);
                 leftSwitchDivider.translateX(cPortWidthA/2+distanceBetweenPortAndSwitch+switchHoleWidth/2)
                 leftSwitchDivider.translateY(0.55-switchHoleHeight/2)//0.55 je polovica ukupne dubine uredaja sa front i back side
@@ -249,7 +297,7 @@
                 //DONJI
                 bottomSwitchDivider=new THREE.Mesh(switchDividerGeometry,switchDividersMaterial);
                 bottomSwitchDivider.rotation.x=-Math.PI/2;
-                bottomSwitchDivider.rotation.z=2.66-Math.PI;
+                bottomSwitchDivider.rotation.z=deviceInitialYRotation;
                 bottomSwitchDivider.translateZ(-deviceHeight/2+Math.cos(Math.PI/2-switchDividerBevelAngle)*(switchDividerDepth/2));
                 bottomSwitchDivider.translateX(cPortWidthA/2+distanceBetweenPortAndSwitch+switchHoleWidth/2)
                 bottomSwitchDivider.translateY(0.55+switchHoleHeight/2-Math.sin(switchDividerBevelAngle)*(switchDividerDepth/2))//translatiraj na donji rub
@@ -269,7 +317,7 @@
                 let switchHoleMiddleGeometry=new THREE.ShapeGeometry(switchHoleMiddleShape);
                 let switchHoleMiddle=new THREE.Mesh(switchHoleMiddleGeometry,switchDividersMaterial);
                 switchHoleMiddle.rotation.x=-Math.PI/2;
-                switchHoleMiddle.rotation.z=2.66-Math.PI;
+                switchHoleMiddle.rotation.z=deviceInitialYRotation;
                 switchHoleMiddle.translateZ(-deviceHeight/2+Math.cos(Math.PI/2-switchDividerBevelAngle)*(switchDividerDepth/2));
                 switchHoleMiddle.translateX(cPortWidthA/2+distanceBetweenPortAndSwitch+switchHoleWidth/2-0.005)//dovedi ga u srediste rupe, 0.005 radi korekcije male
                 switchHoleMiddle.translateY(0.55)
@@ -296,7 +344,7 @@
                 const switchDarkHoleMiddle=new THREE.Mesh(switchDarkHoleMiddleGeometry,holeMaterial);
                 //prebaci ga dole u sredinu
                 switchDarkHoleMiddle.rotation.x=-Math.PI/2;
-                switchDarkHoleMiddle.rotation.z=2.66-Math.PI;
+                switchDarkHoleMiddle.rotation.z=deviceInitialYRotation;
                 switchDarkHoleMiddle.translateZ(-deviceHeight/2+Math.cos(Math.PI/2-switchDividerBevelAngle)*(switchDividerDepth/2)-0.001);
                 switchDarkHoleMiddle.translateX(cPortWidthA/2+distanceBetweenPortAndSwitch+switchHoleWidth/2)//dovedi ga u srediste rupe
                 switchDarkHoleMiddle.translateY(0.55)
@@ -309,7 +357,7 @@
                 const switchOnOffMaterial = new THREE.MeshBasicMaterial( {color: 0xFF0000} );
                 const switchOnOff = new THREE.Mesh( switchOnOffGeometry, switchOnOffMaterial );
                 switchOnOff.rotation.x=-Math.PI/2;
-                switchOnOff.rotation.z=2.66;
+                switchOnOff.rotation.z=deviceInitialYRotation+Math.PI;
                 switchOnOff.translateY(-(deviceMiddleBottomPartDepth+deviceExtrudeDepth)/2+0.1/2);
                 switchOnOff.translateZ(-deviceHeight/2)
                 switchOnOff.translateX(-(cPortWidthA/2+distanceBetweenPortAndSwitch+switchHoleWidth/2-switchDarkHoleWidth/2));//ukljuici uredaj-> pomakni ga na kraj rupe
@@ -331,14 +379,14 @@
                 const cPortDarkHoleGeometry=new THREE.ShapeGeometry(cPortDarkHoleShape);
                 const cPortDarkHole=new THREE.Mesh(cPortDarkHoleGeometry,holeMaterial);
                 cPortDarkHole.rotation.x=-Math.PI/2;
-                cPortDarkHole.rotation.z=2.66;//zelimo zarotirat za 180 da dobijemo na drugu stranu
+                cPortDarkHole.rotation.z=deviceInitialYRotation+Math.PI;//zelimo zarotirat za 180 da dobijemo na drugu stranu
                 cPortDarkHole.translateZ(-deviceHeight/2+Math.cos(Math.PI/2-switchDividerBevelAngle)*(switchDividerDepth/2)-0.001);//stavimo ih na istu visinu kao sto je i rupa za switch
                 //cPortDarkHole.translateX(cPortWidthA/2+distanceBetweenPortAndSwitch+switchHoleWidth/2)//dovedi ga u srediste rupe
                 cPortDarkHole.translateY(-0.55)
                 scene.add(cPortDarkHole)
             }
 
-            function generateButton(scene,bottomLeftX,bottomLeftY,width,height)
+            function generateButton(scene,bottomLeftX,bottomLeftY,width,height,buttonFrameRadius,buttonExtrudeSettings,circleExtrudeSettings,buttonBaseDepth,buttonBevelDepth)
             {
                 //napravi bazu botuna
                 const buttonShape = new THREE.Shape();
@@ -349,9 +397,9 @@
                 buttonShape.lineTo( bottomLeftX+width-buttonFrameRadius, bottomLeftY+buttonFrameRadius );
                 buttonShape.lineTo( bottomLeftX+buttonFrameRadius, bottomLeftY+buttonFrameRadius );
                 const buttonGeometry = new THREE.ExtrudeGeometry( buttonShape, buttonExtrudeSettings );
-                const buttonMaterial = new THREE.MeshPhongMaterial( { color: 0x2F4F4F , side:THREE.FrontSide } );
+                const buttonMaterial = new THREE.MeshPhongMaterial( { color: 0x202020 , side:THREE.FrontSide } );
                 const button = new THREE.Mesh( buttonGeometry, buttonMaterial ) ;
-                button.rotation.y = 2.66 - Math.PI;
+                button.rotation.y = deviceInitialYRotation;
                 button.translateZ(frontDeviceShapeDepth+0.001)
                 scene.add( button );
 
@@ -362,10 +410,9 @@
                 //ORDINATA Y -> donji y + gornji y - donji y) / 2
                 //RADIJUS -> (DESNIX - LIVI X)/2, ISTO KAO SREDISTE, MOZE I S VISINOM NA ISTI NACIN JER JE KVADRAT
                 buttonCircleShape.absarc(bottomLeftX+buttonFrameRadius+(bottomLeftX+width-buttonFrameRadius - (bottomLeftX+buttonFrameRadius))/2, bottomLeftY+buttonFrameRadius+(bottomLeftY+height-buttonFrameRadius - (bottomLeftY+buttonFrameRadius))/2, (bottomLeftX+width-buttonFrameRadius - (bottomLeftX+buttonFrameRadius))/2, 0, 2 * Math.PI, false );
-                let buttonCircleMaterial = new THREE.MeshPhongMaterial( { color: 0x2F4F4F } );
-                let buttonCircleGeometryl= new THREE.ExtrudeGeometry(buttonCircleShape, circleExtrudeSettings);
-                const buttonCircle = new THREE.Mesh( buttonCircleGeometryl, buttonCircleMaterial );
-                buttonCircle.rotation.y=2.66-Math.PI;
+                let buttonCircleGeometry= new THREE.ExtrudeGeometry(buttonCircleShape, circleExtrudeSettings);
+                const buttonCircle = new THREE.Mesh( buttonCircleGeometry, buttonMaterial );
+                buttonCircle.rotation.y=deviceInitialYRotation;
                 buttonCircle.translateZ(frontDeviceShapeDepth+0.001+buttonBaseDepth+buttonBevelDepth);
                 scene.add(buttonCircle)
             }
@@ -381,9 +428,9 @@
                 shape.holes.push(buttonHole);
             }
 
-            function addButtonFrame(scene,buttonBottomLeftX,buttonBottomLeftY,buttonWidth,buttonHeight,buttonFrameMaterial)
+            function addButtonFrame(scene,buttonBottomLeftX,buttonBottomLeftY,buttonWidth,buttonHeight,buttonFrameMaterial,buttonFrameRadius)
             {
-                const buttonFrameOffset=0.01,buttonFrameThickness=0.005, buttonFrameRadius=0.01;
+                const buttonFrameOffset=0.01,buttonFrameThickness=0.005;
                 
                 const buttonFrame= new THREE.Shape();
                 buttonFrame.moveTo(buttonBottomLeftX,buttonBottomLeftY-buttonFrameRadius)//kreni od donjeg livog dijela prije zaobljenog dijela
@@ -407,7 +454,7 @@
 
                 const buttonFrameGeometry= new THREE.ExtrudeGeometry(buttonFrame,buttonFrameExtrudeSettings);
                 const buttonFrameMesh=new THREE.Mesh(buttonFrameGeometry,buttonFrameMaterial);
-                buttonFrameMesh.rotation.y=2.66-Math.PI;
+                buttonFrameMesh.rotation.y=deviceInitialYRotation;
                 //buttonFrameMesh.rotation.z=-Math.PI/2//jer se rotira za 90 kad se koristi extrusion path, potrebno odrodirat
                 scene.add(buttonFrameMesh)
 
@@ -432,18 +479,18 @@
 
                 //DODAJ RUPU ZA EKRAN
                 let screenHole=new THREE.Path();
-                screenHole.moveTo(-0.416*deviceWidth/2,0.1619*deviceHeight);
-                screenHole.lineTo(-0.416*deviceWidth/2,0.1619*deviceHeight+0.416*deviceWidth);
-                screenHole.lineTo(0.416*deviceWidth/2,0.1619*deviceHeight+0.416*deviceWidth);
-                screenHole.lineTo(0.416*deviceWidth/2,0.1619*deviceHeight);
-                screenHole.lineTo(-0.416*deviceWidth/2,0.1619*deviceHeight);
+                screenHole.moveTo(-0.416*deviceWidth/2,0.1219*deviceHeight);
+                screenHole.lineTo(-0.416*deviceWidth/2,0.1219*deviceHeight+0.416*deviceWidth);
+                screenHole.lineTo(0.416*deviceWidth/2,0.1219*deviceHeight+0.416*deviceWidth);
+                screenHole.lineTo(0.416*deviceWidth/2,0.1219*deviceHeight);
+                screenHole.lineTo(-0.416*deviceWidth/2,0.1219*deviceHeight);
                 frontDeviceFaceShape.holes.push(screenHole);
 
                 //RUPE ZA BOTUNE + BOTUNI
-                const buttonWidth = deviceHeight*0.06, buttonHeight = deviceHeight*0.06,buttonBaseDepth=0.01, buttonBevelDepth=0.005;
-
+                const buttonWidth = deviceHeight*0.06,buttonBaseDepth=0.01, buttonBevelDepth=0.005,buttonFrameRadius=0.01;
+                //buton hegiht je u globalnom scopeu jer je potreban u generateGlamosLabels funkciji
                 const buttonExtrudeSettings = {
-                    steps: 2,
+                    steps: 1,
                     depth: buttonBaseDepth,
                     bevelEnabled: true,
                     bevelThickness: buttonBevelDepth,
@@ -452,10 +499,10 @@
                     bevelSegments: 1
                 };
 
-                const buttonCircleDepth=0.0165//dubina kruga na prednjen dijelu botuna
+                const buttonCircleDepth=0.03//dubina kruga na prednjen dijelu botuna
 
                 const circleExtrudeSettings = {
-                    steps: 2,
+                    steps: 1,
                     depth: buttonCircleDepth,
                     curveSegments:50,
                     bevelEnabled: false
@@ -468,27 +515,27 @@
                 //dodaj okvir oko botuna
                 //okvir ima oblik kvadrata sa malo zaboljenim rubovima -> koristi quadratic curve
                 //napravi okvir za zaobljenim rubom i u njemu dodaj rupu i extrudaj
-                addButtonFrame(scene,-(0.4166*deviceWidth/2+buttonWidth/2),-buttonHeight,buttonWidth,buttonHeight,buttonFrameMaterial)
-                generateButton(scene,-(0.4166*deviceWidth/2+buttonWidth/2),-buttonHeight,buttonWidth,buttonHeight)
+                addButtonFrame(scene,-(0.4166*deviceWidth/2+buttonWidth/2),-buttonHeight,buttonWidth,buttonHeight,buttonFrameMaterial,buttonFrameRadius)
+                generateButton(scene,-(0.4166*deviceWidth/2+buttonWidth/2),-buttonHeight,buttonWidth,buttonHeight,buttonFrameRadius,buttonExtrudeSettings,circleExtrudeSettings,buttonBaseDepth,buttonBevelDepth)
                 
                 //DESNI
                 addButtonHole(frontDeviceFaceShape,(0.4166*deviceWidth/2-buttonWidth/2),-buttonHeight,buttonWidth,buttonHeight)
-                addButtonFrame(scene,(0.4166*deviceWidth/2-buttonWidth/2),-buttonHeight,buttonWidth,buttonHeight,buttonFrameMaterial)
-                generateButton(scene,(0.4166*deviceWidth/2-buttonWidth/2),-buttonHeight,buttonWidth,buttonHeight)
+                addButtonFrame(scene,(0.4166*deviceWidth/2-buttonWidth/2),-buttonHeight,buttonWidth,buttonHeight,buttonFrameMaterial,buttonFrameRadius)
+                generateButton(scene,(0.4166*deviceWidth/2-buttonWidth/2),-buttonHeight,buttonWidth,buttonHeight,buttonFrameRadius,buttonExtrudeSettings,circleExtrudeSettings,buttonBaseDepth,buttonBevelDepth)
 
                 //GORNJI SREDNJI
                 addButtonHole(frontDeviceFaceShape,-buttonWidth/2,(-buttonHeight-0.02857*deviceHeight-buttonHeight),buttonWidth,buttonHeight)
-                addButtonFrame(scene,-buttonWidth/2,(-buttonHeight-0.02857*deviceHeight-buttonHeight),buttonWidth,buttonHeight,buttonFrameMaterial)
-                generateButton(scene,-buttonWidth/2,(-buttonHeight-0.02857*deviceHeight-buttonHeight),buttonWidth,buttonHeight)
+                addButtonFrame(scene,-buttonWidth/2,(-buttonHeight-0.02857*deviceHeight-buttonHeight),buttonWidth,buttonHeight,buttonFrameMaterial,buttonFrameRadius)
+                generateButton(scene,-buttonWidth/2,(-buttonHeight-0.02857*deviceHeight-buttonHeight),buttonWidth,buttonHeight,buttonFrameRadius,buttonExtrudeSettings,circleExtrudeSettings,buttonBaseDepth,buttonBevelDepth)
 
                 //DONJI SREDNJI
                 addButtonHole(frontDeviceFaceShape,-buttonWidth/2,(-buttonHeight-0.02857*deviceHeight-buttonHeight-0.133*deviceHeight-buttonHeight),buttonWidth,buttonHeight)
-                addButtonFrame(scene,-buttonWidth/2,(-buttonHeight-0.02857*deviceHeight-buttonHeight-0.133*deviceHeight-buttonHeight),buttonWidth,buttonHeight,buttonFrameMaterial)
-                generateButton(scene,-buttonWidth/2,(-buttonHeight-0.02857*deviceHeight-buttonHeight-0.133*deviceHeight-buttonHeight),buttonWidth,buttonHeight)
+                addButtonFrame(scene,-buttonWidth/2,(-buttonHeight-0.02857*deviceHeight-buttonHeight-0.133*deviceHeight-buttonHeight),buttonWidth,buttonHeight,buttonFrameMaterial,buttonFrameRadius)
+                generateButton(scene,-buttonWidth/2,(-buttonHeight-0.02857*deviceHeight-buttonHeight-0.133*deviceHeight-buttonHeight),buttonWidth,buttonHeight,buttonFrameRadius,buttonExtrudeSettings,circleExtrudeSettings,buttonBaseDepth,buttonBevelDepth)
 
                 const frontDeviceFaceGeometry=new THREE.ExtrudeGeometry( frontDeviceFaceShape, frontDeviceFaceExtrussionSettings );
                 const frontFace= new THREE.Mesh(frontDeviceFaceGeometry, deviceMaterial)
-                frontFace.rotation.y=2.66-Math.PI;
+                frontFace.rotation.y=deviceInitialYRotation;
                 scene.add(frontFace);
             }
 
@@ -496,8 +543,9 @@
             {
                 //atributi koje daje three.js u shadere po defualtu https://threejs.org/docs/index.html?q=web#api/en/renderers/webgl/WebGLProgram
                 /*Note that you can therefore calculate the position of a vertex in the vertex shader by:
-gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
+                gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                 //varyingi se korsite za dijeljenje izmedu veertex i fragment shadera, npr koristimo u fragment shader uv kooridnate za svaki pixel
+/*               Primjer vertex i fragment shadera za shader material
                 const deviceScreenVertexShader=`
 
                     varying vec2 vertexUV;
@@ -510,7 +558,6 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                     }
                 `
 
-                //slika je velicine 1787*435 pixela, zelimo zadrzat njen aspect ratio
                 const deviceScreenFragmentShader=`
 
                 varying vec2 vertexUV;
@@ -521,9 +568,9 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                         //texture2d na temelju u v koordinata od texture vraća boju za taj pixel
                         gl_FragColor = vec4(texture2D(deviceScreenTexture, vertexUV).rgb, 1.0);
                     }
-                `
+                ` */
 
-
+                                    //slika je velicine 1787*435 pixela, zelimo zadrzat njen aspect ratio
                 let deviceBaseScreenGeometry = new THREE.PlaneBufferGeometry(deviceWidth*0.416,deviceWidth*0.416);//baza koja uvik daje bilu pizadinu d onog sta ne zauzme glamos logo slika
 
                 let deviceScreenGeometry = new THREE.PlaneBufferGeometry(deviceWidth*0.416,deviceWidth*0.416*(1403/1500));
@@ -540,18 +587,18 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                             map:screenTexture
                         })
                         const deviceScreen = new THREE.Mesh(deviceScreenGeometry,deviceScreenMaterial);
-                        deviceScreen.rotation.y=2.66-Math.PI;
+                        deviceScreen.rotation.y=deviceInitialYRotation;
                         deviceScreen.translateZ(0.01)
-                        deviceScreen.translateY(0.1619*deviceHeight+0.416*deviceWidth/2);
+                        deviceScreen.translateY(0.1219*deviceHeight+0.416*deviceWidth/2);
                         scene.add(deviceScreen);
 
                         const deviceBaseScreenMaterial=new THREE.MeshBasicMaterial({
                             color:0xffffff
                         });
                         const deviceBaseScreen= new THREE.Mesh(deviceBaseScreenGeometry,deviceBaseScreenMaterial);
-                        deviceBaseScreen.rotation.y=2.66-Math.PI;
+                        deviceBaseScreen.rotation.y=deviceInitialYRotation;
                         deviceBaseScreen.translateZ(0.005);
-                        deviceBaseScreen.translateY(0.1619*deviceHeight+0.416*deviceWidth/2);
+                        deviceBaseScreen.translateY(0.1219*deviceHeight+0.416*deviceWidth/2);
                         scene.add(deviceBaseScreen);
                     },
 
@@ -573,33 +620,33 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                 //livi rub
                 const leftScreenDividerGeometry=new THREE.PlaneBufferGeometry(frontDeviceShapeDepth,0.416*deviceWidth);
                 const leftScreenDivider=new THREE.Mesh(leftScreenDividerGeometry,ScreenDividersMaterial);
-                leftScreenDivider.rotation.y=2.66-Math.PI+Math.PI/2//rotiraj za 9 u odnosu na ekran
+                leftScreenDivider.rotation.y=deviceInitialYRotation+Math.PI/2//rotiraj za 9 u odnosu na ekran
                 leftScreenDivider.translateX(-frontDeviceShapeDepth+frontDeviceShapeDepth/2);//poravnaj po dubini
                 leftScreenDivider.translateZ(-0.416*deviceWidth/2);//poravnaj na lijevi rub ekrana
-                leftScreenDivider.translateY(0.1619*deviceHeight+0.416*deviceWidth/2)//podigni do ekrana
+                leftScreenDivider.translateY(0.1219*deviceHeight+0.416*deviceWidth/2)//podigni do ekrana
                 scene.add(leftScreenDivider);
                 //desni rub
                 const rightScreenDividerGeometry=new THREE.PlaneBufferGeometry(frontDeviceShapeDepth,0.416*deviceWidth);
                 const rightScreenDivider=new THREE.Mesh(rightScreenDividerGeometry,ScreenDividersMaterial);
-                rightScreenDivider.rotation.y=2.66-Math.PI+Math.PI/2
+                rightScreenDivider.rotation.y=deviceInitialYRotation+Math.PI/2
                 rightScreenDivider.translateX(-frontDeviceShapeDepth+frontDeviceShapeDepth/2);//poravnaj po dubini
                 rightScreenDivider.translateZ(0.416*deviceWidth/2);//poravnaj na desni rub ekrana
-                rightScreenDivider.translateY(0.1619*deviceHeight+0.416*deviceWidth/2)//podigni do ekrana
+                rightScreenDivider.translateY(0.1219*deviceHeight+0.416*deviceWidth/2)//podigni do ekrana
                 scene.add(rightScreenDivider);
                 //gornji rub
                 const topScreenDividerGeometry=new THREE.PlaneBufferGeometry(0.416*deviceWidth,frontDeviceShapeDepth);
                 const topScreenDivider=new THREE.Mesh(topScreenDividerGeometry,ScreenDividersMaterial);
                 topScreenDivider.rotation.x=-Math.PI/2;
-                topScreenDivider.rotation.z=2.66-Math.PI;
-                topScreenDivider.translateZ(0.1619*deviceHeight+0.416*deviceWidth)
+                topScreenDivider.rotation.z=deviceInitialYRotation;
+                topScreenDivider.translateZ(0.1219*deviceHeight+0.416*deviceWidth)
                 topScreenDivider.translateY(-frontDeviceShapeDepth+frontDeviceShapeDepth/2)
                 scene.add(topScreenDivider);
                 //donji rub
                 const bottomScreenDividerGeometry=new THREE.PlaneBufferGeometry(0.416*deviceWidth,frontDeviceShapeDepth);
                 const bottomScreenDivider=new THREE.Mesh(bottomScreenDividerGeometry,ScreenDividersMaterial);
                 bottomScreenDivider.rotation.x=-Math.PI/2;
-                bottomScreenDivider.rotation.z=2.66-Math.PI;
-                bottomScreenDivider.translateZ(0.1619*deviceHeight)
+                bottomScreenDivider.rotation.z=deviceInitialYRotation;
+                bottomScreenDivider.translateZ(0.1219*deviceHeight)
                 bottomScreenDivider.translateY(-frontDeviceShapeDepth+frontDeviceShapeDepth/2)
                 scene.add(bottomScreenDivider);
 
@@ -608,64 +655,46 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
             function generateDeviceTopAntennaRing(scene)//napravi prsten na dnu antene na vrhu uređaja
             {
                 let antennaBottomRingExtrudeSettings={
-                    //steps: 2,
+                    steps: 1,
                     curveSegments:50,
                     steps:30,
                     depth: antennaBottomRingDepth,
                     bevelEnabled: true,
                     bevelSize: 0.03, 
-                    bevelThickness: 0.05,
+                    bevelThickness: antennaPartsBevelThickness,
                     bevelSegments:30
                 }
-                //zbog bevela će rubovi di se spajjau 0 i 2pi ostat crtica/praznina jer se tu primjenuuje, zato vucemo prvi krug skoro do 2PI TAKO DA BEVEL POPUNI TAJ DIO KAD SE NAPRAVI
+                //zbog bevela će rubovi di se spajjau 0 i 2pi ostat crtica/praznina jer se tu primjenuuje, zato vucemo prvi krug skoro do 2PI TAKO DA BEVEL POPUNI TAJ DIO KAD SE NAPRAVI, DRUGA OPCIJA JE NAPRAVIT 2 SHAPEA KOJI SE PRIKAPAJU NA TOM DIJELU PA SE NE VIDI RUPA
                 let antennaBottomRingShape1=new THREE.Shape();
-                //let antennaBottomRingShape2=new THREE.Shape();
 
                 antennaBottomRingShape1.absarc(0,0,antennaRadius,0, 1.99*Math.PI, false)
-                //antennaBottomRingShape2.absarc(0,0,antennaRadius,0,2.01*Math.PI,true)
 
                 const antennaBottomRingGeometry1=new THREE.ExtrudeGeometry(antennaBottomRingShape1,antennaBottomRingExtrudeSettings);
-                //const antennaBottomRingGeometry2=new THREE.ExtrudeGeometry(antennaBottomRingShape2,antennaBottomRingExtrudeSettings);
 
                 const antennaBottomRing1=new THREE.Mesh(antennaBottomRingGeometry1,antennaBottomRingNutMaterial);
-                //const antennaBottomRing2=new THREE.Mesh(antennaBottomRingGeometry2,antennaBottomRingNutMaterial);
 
                 //ROTIRAJ DA BUDU USPRAVNI
                 antennaBottomRing1.rotation.x=-Math.PI/2;
-                antennaBottomRing1.rotation.z=2.66-Math.PI;
-                //antennaBottomRing2.rotation.x=-Math.PI/2;
-                //antennaBottomRing2.rotation.z=2.66;
+                antennaBottomRing1.rotation.z=deviceInitialYRotation;
 
                 //TRANSLATIRAJ NA VRH UREDAJA
-                antennaBottomRing1.translateZ(deviceHeight/2+0.05);//nadodjamo bevel thickness jer kad se zarotira DONJI KRUG JE U ISHODISTU ISPOD NJEGA JE NADODAN BEVEL THICKNESS A IZNAD NJEGA SE NALAZI OSTATAK EXTERUDANOG OBLIKA VISINE EXTRUDEDEPTH+GORNJI BEVEL
+                antennaBottomRing1.translateZ(deviceHeight/2+antennaPartsBevelThickness);//nadodjamo bevel thickness jer kad se zarotira DONJI KRUG JE U ISHODISTU ISPOD NJEGA JE NADODAN BEVEL THICKNESS A IZNAD NJEGA SE NALAZI OSTATAK EXTERUDANOG OBLIKA VISINE EXTRUDEDEPTH+GORNJI BEVEL
                 antennaBottomRing1.translateX(antennaHorizontalPosition);
-                antennaBottomRing1.translateY((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth)//stavi srediste antene na srediste debljine uredaja -> DEBLJINA UREDAJA-> frontDeviceShapeDepth+deviceExtrudeDepth, nase srediste se nalazi di i pocetak extrudanong straznjeg dijela uredaja-> pomicemo srediste do sredine uredaja a to je jos sredina-debljina prednje strane uredaja
+                antennaBottomRing1.translateY((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth)//stavi srediste antene na srediste debljine uredaja -> DEBLJINA UREDAJA-> frontDeviceShapeDepth+deviceExtrudeDepth, nase srediste se nalazi di i pocetak extrudanong straznjeg dijela uredaja-> pomicemo srediste do sredine uredaja a to je jos sredina-debljina prednje strane uredaja JER JE STRAZNJI DIO UREDAJA U -X A PREDNJI DIO U + PA JE POTREBNO I TO URACUNAT
 
-                //antennaBottomRing2.translateZ(height/2+0.1);
-                //antennaBottomRing2.translateX(antennaHorizontalPosition);
-/*                 let deviceScreenGeometry = new THREE.PlaneBufferGeometry(2,1);
-                const deviceScreen = new THREE.Mesh(deviceScreenGeometry,antennaBottomRingNutMaterial);
-                deviceScreen.rotation.x=-Math.PI/2;
-                deviceScreen.translateZ(antennaBottomRingDepth);
-                scene.add(deviceScreen); */
                 scene.add(antennaBottomRing1);
-                //scene.add(antennaBottomRing2);
-
-
-
-                
             }
 
             function generateDeviceTopAntennaHexagonNut(scene)//napravi maticu iznad prstena na vrhu uređaja
             {
                 let antennaHexagonNutExtrudeSettings={
-                    //steps: 2,
+                    steps: 1,
                     curveSegments:50,
                     steps:30,
                     depth: antennaHexagonNutDepth,
                     bevelEnabled: true,
                     bevelSize: 0.03, 
-                    bevelThickness: 0.05,
+                    bevelThickness: antennaPartsBevelThickness,
                     bevelSegments:30
                 }
                 //hexagon-> duljina stranice a jednaka je radijusu kruznice
@@ -687,33 +716,29 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                 
                 //ROTIRAJ DA BUDU USPRAVNI
                 antennaHexagonNut.rotation.x=-Math.PI/2;
-                antennaHexagonNut.rotation.z=2.66-Math.PI;
-                //antennaBottomRing2.rotation.x=-Math.PI/2;
-                //antennaBottomRing2.rotation.z=2.66;
+                antennaHexagonNut.rotation.z=deviceInitialYRotation;
 
                 //TRANSLATIRAJ
-                antennaHexagonNut.translateZ(deviceHeight/2+0.05+antennaBottomRingDepth+0.05+0.05);//sa height/2+0.05 dodemo na vrh uredaja i onda trebamo doc tocno iznad prstena-> potrebno dodat njegovu dvostruku debljinu(jer bevel ide u 2 smjera)
+                antennaHexagonNut.translateZ(deviceHeight/2+antennaPartsBevelThickness+antennaBottomRingDepth+antennaPartsBevelThickness+antennaPartsBevelThickness);//sa height/2+0.05 dodemo na vrh uredaja i onda trebamo doc tocno iznad prstena-> potrebno dodat njegovu dvostruku debljinu(jer bevel ide u 2 smjera)
                 antennaHexagonNut.translateX(antennaHorizontalPosition);
                 antennaHexagonNut.translateY((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth)//stavi srediste antene na srediste debljine uredaja -> DEBLJINA UREDAJA-> frontDeviceShapeDepth+deviceExtrudeDepth, nase srediste se nalazi di i pocetak extrudanong straznjeg dijela uredaja-> pomicemo srediste do sredine uredaja a to je jos sredina-debljina prednje strane uredaja
 
-                //antennaBottomRing2.translateZ(height/2+0.1);
-                //antennaBottomRing2.translateX(antennaHorizontalPosition);
                 scene.add(antennaHexagonNut);
             }
 
-            function generateDevicAntennaTopPart(scene)//napravi antenu na vrhu ređaja koja se satoji od 3 dijela(NBROJANA PO REDU OD DOLI PREMA GORE) -> VALJAK, PRSTEN, POLOVICA SFERE(KAPICA NA VRHU, Sphere geomtry, kut theta namisti)
+            function generateDeviceAntennaTopPart(scene)//napravi antenu na vrhu ređaja koja se satoji od 3 dijela(NBROJANA PO REDU OD DOLI PREMA GORE) -> VALJAK, PRSTEN, POLOVICA SFERE(KAPICA NA VRHU, Sphere geomtry, kut theta namisti)
             {
                 //DODAJ VALJAK
                 let antennaMiddleCilinderShape=new THREE.Shape();
 
                 let antennaCilinderExtrudeSettings={
-                    //steps: 2,
+                    steps: 1,
                     curveSegments:50,
                     steps:30,
                     depth: antennaCilinderHeight,
                     bevelEnabled: true,
                     bevelSize: 0.01, 
-                    bevelThickness: 0.05,
+                    bevelThickness: antennaPartsBevelThickness,
                     bevelSegments:30
                 }
 
@@ -725,12 +750,10 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
 
                 //ROTIRAJ DA BUDU USPRAVNI
                 antennaMiddleCilinder.rotation.x=-Math.PI/2;
-                antennaMiddleCilinder.rotation.z=2.66-Math.PI;
-                //antennaBottomRing2.rotation.x=-Math.PI/2;
-                //antennaBottomRing2.rotation.z=2.66;
+                antennaMiddleCilinder.rotation.z=deviceInitialYRotation;
 
                 //TRANSLATIRAJ                                              //nema bevela NADODAJEMO 2 BEVELA OD PRSTENA, 2 BEVELA OD MATICE I NJIHOVE DUBINE ZA DOC NA VRH
-                antennaMiddleCilinder.translateZ(deviceHeight/2+0.05+antennaBottomRingDepth+0.05+0.05+antennaHexagonNutDepth+0.05+0.05);//sa height/2+0.1 dodemo na vrh uredaja i onda trebamo doc tocno iznad prstena-> potrebno dodat njegovu dvostruku debljinu(jer bevel ide u 2 smjera)
+                antennaMiddleCilinder.translateZ(deviceHeight/2+antennaPartsBevelThickness+antennaBottomRingDepth+antennaPartsBevelThickness+antennaPartsBevelThickness+antennaHexagonNutDepth+antennaPartsBevelThickness+antennaPartsBevelThickness);//sa height/2+0.1 dodemo na vrh uredaja i onda trebamo doc tocno iznad prstena-> potrebno dodat njegovu dvostruku debljinu(jer bevel ide u 2 smjera)
                 antennaMiddleCilinder.translateX(antennaHorizontalPosition);
                 antennaMiddleCilinder.translateY((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth)//stavi srediste antene na srediste debljine uredaja -> DEBLJINA UREDAJA-> frontDeviceShapeDepth+deviceExtrudeDepth, nase srediste se nalazi di i pocetak extrudanong straznjeg dijela uredaja-> pomicemo srediste do sredine uredaja a to je jos sredina-debljina prednje strane uredaja
 
@@ -740,17 +763,17 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                 let antennaMiddleRingShape=new THREE.Shape();
 
                 let antennaMiddleRingExtrudeSettings={
-                    //steps: 2,
+                    steps: 1,
                     curveSegments:50,
                     steps:30,
                     depth: antennaBottomRingDepth*0.75,//25% manja dubina od onog na dnu
                     bevelEnabled: true,
                     bevelSize: 0.01, 
-                    bevelThickness: 0.05,
+                    bevelThickness: antennaPartsBevelThickness,
                     bevelSegments:30
                 }
 
-                antennaMiddleRingShape.absarc(0,0,antennaRadius,0, 2*Math.PI, false)
+                antennaMiddleRingShape.absarc(0,0,antennaRadius,0, 1.995*Math.PI, false)
 
                 const antennaMiddleRingGeometry=new THREE.ExtrudeGeometry(antennaMiddleRingShape,antennaMiddleRingExtrudeSettings)
 
@@ -758,12 +781,10 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
 
                 //ROTIRAJ DA BUDU USPRAVNI
                 antennaMiddleRing.rotation.x=-Math.PI/2;
-                antennaMiddleRing.rotation.z=2.66-Math.PI;
-                //antennaBottomRing2.rotation.x=-Math.PI/2;
-                //antennaBottomRing2.rotation.z=2.66;
+                antennaMiddleRing.rotation.z=deviceInitialYRotation;
 
                 //TRANSLATIRAJ                                              
-                antennaMiddleRing.translateZ(deviceHeight/2+0.05+antennaBottomRingDepth+0.05+0.05+antennaHexagonNutDepth+0.05+antennaCilinderHeight+0.05+0.05+0.05);//kada srediste dode di i gornji dio valjka triba ga jos dignit za antennaBottomRingDept/2 + bevel thickness(0.02)
+                antennaMiddleRing.translateZ(deviceHeight/2+antennaPartsBevelThickness+antennaBottomRingDepth+antennaPartsBevelThickness+antennaPartsBevelThickness+antennaHexagonNutDepth+antennaPartsBevelThickness+antennaCilinderHeight+antennaPartsBevelThickness+antennaPartsBevelThickness+antennaPartsBevelThickness);//kada srediste dode di i gornji dio valjka triba ga jos dignit za antennaBottomRingDept/2 + bevel thickness(0.02)
                 antennaMiddleRing.translateX(antennaHorizontalPosition);
                 antennaMiddleRing.translateY((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth)//stavi srediste antene na srediste debljine uredaja -> DEBLJINA UREDAJA-> frontDeviceShapeDepth+deviceExtrudeDepth, nase srediste se nalazi di i pocetak extrudanong straznjeg dijela uredaja-> pomicemo srediste do sredine uredaja a to je jos sredina-debljina prednje strane uredaja
 
@@ -775,9 +796,9 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                 const antennaTopHalfSphere = new THREE.Mesh( antennaTopHalfSphereGeometry, antennaTopPartMaterial );
                 //rotiraj
                 antennaTopHalfSphere.rotation.x=-Math.PI;//osi iste kao kod normalnog x samo drugi predznaci -> x i y osi di su prije isli s + sad su -, x ostaje nepromjenjen, rotirali se oko x za 180
-                antennaTopHalfSphere.rotation.y=-(2.66-Math.PI);
+                antennaTopHalfSphere.rotation.y=-(deviceInitialYRotation);
                 //translatiraj
-                antennaTopHalfSphere.translateY(-(deviceHeight/2+0.05+antennaBottomRingDepth+0.05+0.05+antennaHexagonNutDepth+0.05+antennaCilinderHeight+0.05+0.05+0.05+antennaBottomRingDepth*0.75+0.05));//kada srediste dode di i gornji dio valjka triba ga jos dignit za antennaBottomRingDept/2 + bevel thickness(0.02)
+                antennaTopHalfSphere.translateY(-(deviceHeight/2+antennaPartsBevelThickness+antennaBottomRingDepth+antennaPartsBevelThickness+antennaPartsBevelThickness+antennaHexagonNutDepth+antennaPartsBevelThickness+antennaCilinderHeight+antennaPartsBevelThickness+antennaPartsBevelThickness+antennaPartsBevelThickness+antennaBottomRingDepth*0.75+antennaPartsBevelThickness));//antennaBottomRingDepth*0.75 je visina/dubina prstena
                 antennaTopHalfSphere.translateZ(((deviceExtrudeDepth+frontDeviceShapeDepth)/2-frontDeviceShapeDepth))
                 antennaTopHalfSphere.translateX(antennaHorizontalPosition);
 
@@ -802,7 +823,7 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                         })
                         const frontBottomLogoGeometry = new THREE.PlaneBufferGeometry(0.3833*deviceWidth,0.3833*deviceWidth*435/1787);
                         const frontBottomLogo = new THREE.Mesh(frontBottomLogoGeometry,frontBottomLogoMaterial);
-                        frontBottomLogo.rotation.y=2.66-Math.PI;
+                        frontBottomLogo.rotation.y=deviceInitialYRotation;
                         frontBottomLogo.translateZ(frontDeviceShapeDepth+0.01)
                         frontBottomLogo.translateY(-buttonHeight-0.02857*deviceHeight-buttonHeight-0.133*deviceHeight-buttonHeight-0.0714*deviceHeight);
                         scene.add(frontBottomLogo);
@@ -832,7 +853,7 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                     })
                     const deviceBackLogoGeometry = new THREE.PlaneBufferGeometry(0.5*deviceWidth,0.5*deviceWidth*(1403/1500));
                     const deviceBackLogo = new THREE.Mesh(deviceBackLogoGeometry,deviceBackLogoMaterial);
-                    deviceBackLogo.rotation.y=2.66-Math.PI-Math.PI;
+                    deviceBackLogo.rotation.y=deviceInitialYRotation-Math.PI;
                     deviceBackLogo.translateZ(deviceExtrudeDepth+0.01)
                     deviceBackLogo.translateY(0.2047*deviceHeight);
                     scene.add(deviceBackLogo);
@@ -850,54 +871,63 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
 
             }
 
-            function updateButtonMesh()
-            {
-                buttonExtrudeSettings.steps=world.button.extrusionSteps;
-                buttonExtrudeSettings.depth=world.button.extrusionDepth;
-                buttonExtrudeSettings.bevelThickness=world.button.extrusionBevelThickness;
-                buttonExtrudeSettings.bevelSize=world.button.extrusionBevelSize;
-                buttonExtrudeSettings.bevelOffset=world.button.extrusionBevelOffset;
-                buttonExtrudeSettings.bevelSegments=world.button.extrusionBevelSegments;
-                button.geometry = new THREE.ExtrudeGeometry( buttonShape, buttonExtrudeSettings );
-            }
-            let deviceFolder=gui.addFolder('device');//ovako se dodaju folderi -> grupiraj parametre po znacenjima raddvoji svitla i objekt 
-            deviceFolder.add(world.device, 'width', 1, 20).onChange(updateDeviceMesh)
-            deviceFolder.add(world.device, 'height', 1, 20).onChange(updateDeviceMesh)
-            deviceFolder.add(world.device, 'radius', 0.1, 5).onChange(updateDeviceMesh)
-            deviceFolder.add(world.device, 'rotateX', 0, 2*Math.PI).onChange(updateDeviceMesh)
-            deviceFolder.add(world.device, 'rotateY', 0, 2*Math.PI).onChange(updateDeviceMesh)
-            deviceFolder.add(world.device, 'rotateZ', 0, 2*Math.PI).onChange(updateDeviceMesh)
-            deviceFolder.add(world.device, 'extrusionSteps', 0, 10,1).onChange(updateDeviceMesh)
-            deviceFolder.add(world.device, 'extrusionDepth', 0, 10,0.1).onChange(updateDeviceMesh)
-            let deviceBottomFolder=gui.addFolder('deviceBottom');
-            deviceBottomFolder.add(world.deviceBottom, 'rotateX',0, 2*Math.PI).onChange(updateDeviceBottomMesh);
-            deviceBottomFolder.add(world.deviceBottom, 'rotateY',0, 2*Math.PI).onChange(updateDeviceBottomMesh);
-            deviceBottomFolder.add(world.deviceBottom, 'rotateZ',0, 2*Math.PI).onChange(updateDeviceBottomMesh);
-            let frontLightFolder=gui.addFolder('frontLight');
-            frontLightFolder.add(world.frontLight,'x',-5,5).onChange(()=>frontLight.position.set(world.frontLight.x,world.frontLight.y,world.frontLight.z));
-            frontLightFolder.add(world.frontLight,'y',-5,5).onChange(()=>frontLight.position.set(world.frontLight.x,world.frontLight.y,world.frontLight.z));
-            frontLightFolder.add(world.frontLight,'z',-5,5).onChange(()=>frontLight.position.set(world.frontLight.x,world.frontLight.y,world.frontLight.z));;
-            let backLightFolder=gui.addFolder('backLight');
-            backLightFolder.add(world.backLight,'x',-5,5).onChange(()=>backLight.position.set(world.backLight.x,world.backLight.y,world.backLight.z));
-            backLightFolder.add(world.backLight,'y',-5,5).onChange(()=>backLight.position.set(world.backLight.x,world.backLight.y,world.backLight.z));;
-            backLightFolder.add(world.backLight,'z',-5,5).onChange(()=>backLight.position.set(world.backLight.x,world.backLight.y,world.backLight.z));;
-            let buttonFolder=gui.addFolder('button');
-            buttonFolder.add(world.button,'extrusionSteps',0,10,1).onChange(updateButtonMesh);
-            buttonFolder.add(world.button,'extrusionDepth',0,1,0.01).onChange(updateButtonMesh);
-            buttonFolder.add(world.button,'extrusionBevelThickness',0,2,0.05).onChange(updateButtonMesh);
-            buttonFolder.add(world.button,'extrusionBevelSize',0,2,0.05).onChange(updateButtonMesh);
-            buttonFolder.add(world.button,'extrusionBevelOffset',0,5,0.1).onChange(updateButtonMesh);
-            buttonFolder.add(world.button,'extrusionBevelSegments',1,5,1).onChange(updateButtonMesh);
+            //incijalizacija scene
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight,0.01, 1000 );
 
+            const renderer = new THREE.WebGLRenderer({
+                alpha:true,//da pozadina slike ekrana koja je transparent ne bude postavljena na transparent od browsera odnosno sivkasta
+                //f you want a transparent background in three.js, you need pass in the alpha parameter to the WebGLRenderer constructor.
+                antialias:true//makni probleme kod rubova di nisu glatke linije
+            });
+            renderer.setClearColor( 0x000000 );//boja pozadine
+            renderer.setPixelRatio( window.devicePixelRatio );
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            document.body.appendChild( renderer.domElement );
+
+            //bijelo svijetlo njjaceg itneziteta, directionall ight oponasa dayligght, paralelene zrake
+            //imamo 4 izvora svjetla sa sve 4 strane uredaja
+            const frontLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
+            frontLight.position.set(0,1,1);
+            scene.add(frontLight);
+
+            const backLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
+            backLight.position.set(0,-1,-1);
+            scene.add(backLight);
+
+            const leftLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
+            leftLight.position.set(-3,1,0);
+            scene.add(leftLight);
+
+            const rightLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
+            rightLight.position.set(3,1,0);
+            scene.add(rightLight);
+
+            camera.position.set(-1,-0.2,7.1);
+
+            let orbitControls = new THREE.OrbitControls(camera, renderer.domElement);//za mogucnost kretanja oko objekta pomocu misa
+
+            function onWindowResize() {//responsive desgin na resize prozora, prati promjenu velicine prozora tako da mozemo testirat na manjin ekranima, inace se nec minja ovi aspekt i nas uredaj stoji fiksno ko na velikon ekranu pa ce smannivanjen ekrana skroz nestat iz vidiljvig podrucja, samo crnilo
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize( window.innerWidth, window.innerHeight );
+
+            }
+
+            window.addEventListener('resize',onWindowResize);
+            
             //dubini cijelog uredaja(front i back side) s bevelom donjeg dijela treba biti 0.2*height=1.2
-            var deviceHeight=6,deviceWidth=4,deviceCornerRadius=0.5,deviceMiddleBottomPartDepth=0.1,deviceExtrudeDepth=1.1,frontDeviceShapeDepth=0.1;
+            var deviceInitialYRotation=2.66-Math.PI, deviceHeight=6,deviceWidth=4,deviceCornerRadius=0.5,deviceMiddleBottomPartDepth=0.1,deviceExtrudeDepth=1.1,frontDeviceShapeDepth=0.1;
+
+            var buttonHeight = deviceHeight*0.06;
 
             //extrude postavke za dijelove uredaja -> extrudamo ih prema nazad a ostalo se sve po defualtu extruda prema naprijed
-            var backDevicev1 = new THREE.Vector3(0, 0, 0);
+            const backDevicev1 = new THREE.Vector3(0, 0, 0);
 
-            var backDevicev2 = new THREE.Vector3(0, 0, -deviceExtrudeDepth);
+            const backDevicev2 = new THREE.Vector3(0, 0, -deviceExtrudeDepth);
 
-            var backDeviceExtrusionPath = new THREE.LineCurve3(backDevicev1, backDevicev2)
+            const backDeviceExtrusionPath = new THREE.LineCurve3(backDevicev1, backDevicev2)
 
             var deviceLeftRightMiddleTopExtrudeSettings = {
                 steps: 1,
@@ -918,27 +948,29 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                 depth:frontDeviceShapeDepth,
                 bevelEnabled:false
             }
+            
+            //U DEPTH NIJE UKLJUCENA DEBLJINA BEVELA NA STRANAM EXTRUDANJA -> UKUPNA VISINA JE 2*BEVEL THICKNESS + DEPTH
+            //generiraj antenu na vrhu po dijelovima
+            //parametri za djelove antene
+            var antennaRadius=0.2;
+            var antennaHorizontalPosition=-1;//pozicija sredisnjeg dijela antene na vrhu uredaja gledamo horizontalno u odnosu na sirinu uredaja
+            var antennaBottomRingDepth=0.1;//prsten na dnu
+            var antennaHexagonNutDepth=0.2;//sesterokutasta matica
+            var antennaCilinderHeight=2;//visina valjka ispod kugline kapice
+            var antennaPartsBevelThickness=0.05;
 
-            //incijalizacija scene
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight,0.01, 1000 );
+            var antennaBottomRingNutMaterial=new THREE.MeshStandardMaterial({
+                color:0xffc107,
+                roughness:0.5,
+                metalness:1,
+                reflectivity:1,
+            })
 
-            const renderer = new THREE.WebGLRenderer({
-                alpha:true,//da pozadina slike ekrana koja je transparent ne bude postavljena na transparent od browsera odnosno sivkasta
-                antialias:true//makni probleme kod rubova di nisu glatke linije
-            });
-            renderer.setClearColor( 0x000000 );//boja pozadine
-            renderer.setPixelRatio( window.devicePixelRatio );
-            renderer.setSize( window.innerWidth, window.innerHeight );
-            document.body.appendChild( renderer.domElement );
-            let orbitControls = new THREE.OrbitControls(camera, renderer.domElement);//za mogucnost kretanja oko objekta pomocu misa
-        
-
+            var antennaTopPartMaterial=new THREE.MeshPhongMaterial({
+                color:0x000000
+            })
             //ucitaj materijal za uredaj i onda kreni s iscrtavanjem
             var deviceMaterial;
-/*             var deviceMaterial2=new THREE.MeshPhongMaterial({
-                color:0xff0000
-            }) */
             var switchDividersMaterial;
             //PARAMETRI ZA DIJELOVE UREDAJA KOJIMA SE MIENJJA BOJA OVISNO O ODABIRU-> TZREBAJU BIT U GLAVNOM PROGRAMU I GLOBALNO DOSTUPNI ZBOG MOGUCNOSTI PROMJENE BOJA NA KLIK
             //lijevi dio uredaja
@@ -977,7 +1009,17 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                 generateDeviceMiddleBottomShape(scene);
                 //PREDNJI DIO EKRANA
                 generateFrontDeviceShape(scene);
-                console.log(deviceMiddleTopPart);
+                //ekran
+                generateDeviceScreen(scene);
+                //glamos labele s prednje i straznje strane
+                generateGlamosLabels(scene);
+
+                //generiraj gornju antenu i sve njene dijelove
+                generateDeviceTopAntennaRing(scene);
+
+                generateDeviceTopAntennaHexagonNut(scene);
+
+                generateDeviceAntennaTopPart(scene);
             },
 
             // onProgress callback
@@ -989,77 +1031,36 @@ gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );*/
                 //ispisi div tag koji govori da je error
             }
             )
- 
-            //bijelo svijetlo njjaceg itneziteta, directionall ight oponasa dayligght, paralelene zrake
-            
 
-
-            generateDeviceScreen(scene);
-
-            //U DEPTH NIJE UKLJUCENA DEBLJINA BEVELA NA STRANAM EXTRUDANJA -> UKUPNA VISINA JE 2*BEVEL THICKNESS + DEPTH
-            //generiraj antenu na vrhu po dijelovima
-            //parametri za djelove antene
-            let antennaRadius=0.2;
-            let antennaHorizontalPosition=-1;//pozicija sredisnjeg dijela antene na vrhu uredaja gledamo horizontalno u odnosu na sirinu uredaja
-            let antennaBottomRingDepth=0.1;//prsten na dnu
-            let antennaHexagonNutDepth=0.2;//sesterokutasta matica
-            let antennaCilinderHeight=2;//visina valjka ispod kugline kapice
-
-            let antennaBottomRingNutMaterial=new THREE.MeshStandardMaterial({
-                color:0xffc107,
-                roughness:0.5,
-                metalness:1,
-                reflectivity:1,
-            })
-
-            let antennaTopPartMaterial=new THREE.MeshPhongMaterial({
-                color:0x000000
-            })
-
-            generateDeviceTopAntennaRing(scene);
-
-            generateDeviceTopAntennaHexagonNut(scene);
-
-            generateDevicAntennaTopPart(scene);
-
-            generateGlamosLabels(scene);
-
-            const frontLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
-            frontLight.position.set(0,1,1);
-            scene.add(frontLight);
-
-            const backLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
-            backLight.position.set(0,-1,-1);
-            scene.add(backLight);
-
-            const leftLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
-            leftLight.position.set(-3,1,0);
-            scene.add(leftLight);
-
-            const rightLight= new THREE.DirectionalLight(0xffffff,1)//dodaj svjetlo da dobijemo efekte sjena, potrebno kad koristimo meshphong material -> on reagira sa sjenom
-            rightLight.position.set(3,1,0);
-            scene.add(rightLight);
-
-            camera.position.z = 5;
-            camera.position.y=5;
-
-            function onWindowResize() {//responsive desgin na resize prozora, prati promjenu velicine prozora tako da mozemo testirat na manjin ekranima, inace se nec minja ovi aspekt i nas uredaj stoji fiksno ko na velikon ekranu pa ce smannivanjen ekrana skroz nestat iz vidiljvig podrucja, samo crnilo
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-
-            renderer.setSize( window.innerWidth, window.innerHeight );
-
-            }
-
-            window.addEventListener('resize',onWindowResize);
-
-
+            //temeljna petlja
             function animate() {
+
                 requestAnimationFrame( animate );//This will create a loop that causes the renderer to draw the scene every time the screen is refreshed
 
                 renderer.render( scene,camera);
             }
             animate();
+
+/*             setTimeout(()=>{
+                textureLoader.load('/textures/red-texture.png',
+                            // onLoad callback
+            function ( deviceTexture ) {
+                deviceTexture.wrapS=THREE.RepeatWrapping;
+                deviceTexture.wrapT=THREE.RepeatWrapping;
+                deviceTexture.repeat.set(10,10)//odredujemo finocu prikaza odnosono koliko ce hih bit vertikalno i horizontalno
+                deviceMaterial.map=deviceTexture;
+                deviceMaterial.needsUpdate=true;
+            },
+
+            // onProgress callback
+            undefined,
+
+            // onError callback
+            function ( err ) {
+                console.error( 'An error happened.' );
+                //ispisi div tag koji govori da je error
+            })
+            },5000) */
 		</script>
 	</body>
 </html>
